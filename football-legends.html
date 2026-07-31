@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Legends Archive — Football Hall of Fame</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --pitch:#0E3B2E;
+  --pitch-deep:#0A2C22;
+  --turf:#15503B;
+  --line:rgba(244,241,230,0.14);
+  --line-strong:rgba(244,241,230,0.28);
+  --chalk:#F4F1E6;
+  --chalk-dim:#C9C6B8;
+  --amber:#E8A33D;
+  --amber-deep:#B9781F;
+  --red:#C0392B;
+  --ink:#08150F;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--pitch);
+  color:var(--chalk);
+  font-family:'Archivo',sans-serif;
+  min-height:100vh;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 28px 100px;}
+
+/* subtle pitch-line texture behind everything */
+.field-lines{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 119px, var(--turf) 119px 120px);
+  opacity:0.35;
+}
+
+.content{position:relative; z-index:1;}
+
+/* ===== HERO / SCOREBOARD ===== */
+.hero{
+  border:1px solid var(--line-strong);
+  border-radius:6px;
+  background:var(--pitch-deep);
+  padding:36px 36px 28px;
+  margin-bottom:34px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:"";
+  position:absolute; top:0; left:0; right:0; height:4px;
+  background:repeating-linear-gradient(90deg, var(--amber) 0 18px, transparent 18px 36px);
+}
+.hero-top{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:20px;}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;
+  color:var(--amber); text-transform:uppercase; margin:0 0 8px;
+}
+h1{
+  font-family:'Anton',sans-serif; font-weight:400;
+  font-size:56px; line-height:0.92; margin:0;
+  letter-spacing:0.5px; color:var(--chalk);
+}
+.hero-sub{font-size:15px; color:var(--chalk-dim); margin:10px 0 0; max-width:440px; line-height:1.6;}
+
+.scoreboard{
+  display:flex; gap:0; border:1px solid var(--line-strong); border-radius:4px; overflow:hidden;
+  font-family:'IBM Plex Mono',monospace;
+}
+.score-cell{padding:10px 20px; text-align:center; border-right:1px solid var(--line-strong);}
+.score-cell:last-child{border-right:none;}
+.score-num{font-size:26px; font-weight:600; color:var(--amber); display:block; font-variant-numeric:tabular-nums;}
+.score-label{font-size:10px; letter-spacing:1.5px; color:var(--chalk-dim); text-transform:uppercase;}
+
+/* search + filters */
+.controls{margin-top:28px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;}
+.search-box{
+  flex:1; min-width:220px; position:relative;
+}
+.search-box input{
+  width:100%; background:var(--ink); border:1px solid var(--line-strong); border-radius:4px;
+  color:var(--chalk); font-family:'IBM Plex Mono',monospace; font-size:14px;
+  padding:12px 14px 12px 34px; outline:none; transition:border-color 0.2s;
+}
+.search-box input:focus{border-color:var(--amber);}
+.search-box::before{
+  content:"⚲"; position:absolute; left:12px; top:50%; transform:translateY(-50%) rotate(90deg);
+  color:var(--chalk-dim); font-size:14px;
+}
+.chip-row{display:flex; gap:8px; flex-wrap:wrap;}
+.chip{
+  font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.5px;
+  padding:9px 14px; border:1px solid var(--line-strong); border-radius:20px;
+  background:transparent; color:var(--chalk-dim); cursor:pointer;
+  transition:all 0.18s ease;
+}
+.chip:hover{border-color:var(--chalk-dim); color:var(--chalk);}
+.chip.active{background:var(--amber); border-color:var(--amber); color:var(--ink); font-weight:600;}
+
+.result-count{
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--chalk-dim);
+  margin:18px 2px 14px; letter-spacing:0.5px;
+}
+
+/* ===== GRID ===== */
+.grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:16px;
+}
+.card{
+  position:relative; overflow:hidden;
+  border:1px solid var(--line-strong); border-radius:6px; background:var(--pitch-deep);
+  padding:20px 18px 18px; cursor:pointer;
+  transition:transform 0.25s cubic-bezier(.2,.8,.2,1), border-color 0.25s, box-shadow 0.25s;
+  opacity:0; transform:translateY(14px);
+  animation:cardIn 0.45s ease forwards;
+}
+@keyframes cardIn{to{opacity:1; transform:translateY(0);}}
+.card:hover{
+  transform:translateY(-5px);
+  border-color:var(--amber);
+  box-shadow:0 14px 30px -14px rgba(0,0,0,0.6);
+}
+.card-num{
+  position:absolute; right:6px; top:-10px;
+  font-family:'Anton',sans-serif; font-size:96px; color:var(--turf);
+  line-height:1; user-select:none; z-index:0;
+  transition:color 0.25s;
+}
+.card:hover .card-num{color:var(--amber-deep);}
+.card-body{position:relative; z-index:1;}
+.pos-badge{
+  display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px;
+  letter-spacing:1px; padding:3px 8px; border-radius:3px;
+  background:var(--turf); color:var(--chalk); margin-bottom:12px;
+}
+.card-name{
+  font-family:'Anton',sans-serif; font-weight:400; font-size:24px; line-height:1.02;
+  margin:0 0 4px; color:var(--chalk);
+}
+.card-country{font-size:12px; color:var(--chalk-dim); margin:0 0 14px;}
+.card-stats{
+  display:flex; gap:16px; padding-top:12px; border-top:1px solid var(--line);
+  font-family:'IBM Plex Mono',monospace;
+}
+.stat-mini{font-size:18px; font-weight:600; color:var(--amber); display:block; font-variant-numeric:tabular-nums;}
+.stat-mini-label{font-size:9px; color:var(--chalk-dim); letter-spacing:1px; text-transform:uppercase;}
+
+.empty{
+  grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--chalk-dim);
+  font-family:'IBM Plex Mono',monospace; font-size:13px;
+}
+
+/* ===== MODAL ===== */
+.overlay{
+  position:fixed; inset:0; background:rgba(6,16,11,0.78);
+  display:flex; align-items:center; justify-content:center; padding:24px;
+  z-index:50; opacity:0; pointer-events:none; transition:opacity 0.25s ease;
+}
+.overlay.open{opacity:1; pointer-events:auto;}
+.modal{
+  background:var(--pitch-deep); border:1px solid var(--line-strong); border-radius:8px;
+  max-width:620px; width:100%; max-height:86vh; overflow-y:auto;
+  padding:0; position:relative;
+  transform:translateY(24px) scale(0.98); opacity:0;
+  transition:transform 0.3s cubic-bezier(.2,.8,.2,1), opacity 0.3s;
+}
+.overlay.open .modal{transform:translateY(0) scale(1); opacity:1;}
+.modal-head{
+  padding:32px 32px 24px; position:relative; overflow:hidden;
+  border-bottom:1px solid var(--line);
+}
+.modal-num{
+  position:absolute; right:10px; top:-24px; font-family:'Anton',sans-serif;
+  font-size:140px; color:var(--turf); line-height:1; z-index:0;
+}
+.modal-close{
+  position:absolute; top:18px; right:18px; z-index:2;
+  background:transparent; border:1px solid var(--line-strong); color:var(--chalk);
+  width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color 0.2s, background 0.2s;
+}
+.modal-close:hover{border-color:var(--amber); background:rgba(232,163,61,0.1);}
+.modal-head-body{position:relative; z-index:1;}
+.modal-name{font-family:'Anton',sans-serif; font-size:40px; margin:0; color:var(--chalk); line-height:1;}
+.modal-meta{font-size:13px; color:var(--chalk-dim); margin:8px 0 0;}
+.modal-content{padding:26px 32px 32px;}
+.section-label{
+  font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:2px;
+  color:var(--amber); text-transform:uppercase; margin:0 0 12px;
+}
+.bio{font-size:14px; line-height:1.75; color:var(--chalk-dim); margin:0 0 26px;}
+
+.timeline{margin-bottom:26px;}
+.tl-row{display:flex; align-items:center; gap:12px; margin-bottom:8px;}
+.tl-club{font-size:13px; width:120px; flex-shrink:0; color:var(--chalk);}
+.tl-bar-track{flex:1; height:6px; background:var(--ink); border-radius:3px; overflow:hidden;}
+.tl-bar-fill{height:100%; background:var(--amber); border-radius:3px; width:0%; transition:width 0.8s cubic-bezier(.2,.8,.2,1);}
+.tl-years{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--chalk-dim); width:78px; text-align:right; flex-shrink:0;}
+
+.stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:26px;}
+.stat-box{border:1px solid var(--line); border-radius:5px; padding:14px 10px; text-align:center;}
+.stat-box-num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; color:var(--amber); display:block; font-variant-numeric:tabular-nums;}
+.stat-box-label{font-size:10px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:1px; margin-top:4px;}
+
+.honours{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+.honours li{
+  font-size:13px; color:var(--chalk-dim); padding-left:16px; position:relative; line-height:1.5;
+}
+.honours li::before{content:"—"; position:absolute; left:0; color:var(--amber);}
+
+footer{
+  text-align:center; margin-top:44px; font-family:'IBM Plex Mono',monospace;
+  font-size:11px; color:var(--chalk-dim); letter-spacing:1px;
+}
+
+@media (max-width:640px){
+  h1{font-size:38px;}
+  .scoreboard{width:100%;}
+  .modal-name{font-size:30px;}
+}
+</style>
+</head>
+<body>
+<div class="field-lines"></div>
+<div class="wrap content">
+
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <p class="eyebrow">Est. archive — matchday programme</p>
+        <h1>LEGENDS<br>ARCHIVE</h1>
+        <p class="hero-sub">A record of the players who defined eras of the game. Search by name, club, or filter by position and generation.</p>
+      </div>
+      <div class="scoreboard">
+        <div class="score-cell"><span class="score-num" id="statPlayers">0</span><span class="score-label">Legends</span></div>
+        <div class="score-cell"><span class="score-num" id="statTitles">0</span><span class="score-label">World Cups won</span></div>
+        <div class="score-cell"><span class="score-num" id="statEras">0</span><span class="score-label">Eras spanned</span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by name or club…">
+      </div>
+    </div>
+    <div class="chip-row" id="posFilters" style="margin-top:12px;"></div>
+    <div class="chip-row" id="eraFilters" style="margin-top:8px;"></div>
+  </div>
+
+  <p class="result-count" id="resultCount"></p>
+  <div class="grid" id="grid"></div>
+
+  <footer>LEGENDS ARCHIVE · A PROTOTYPE PLAYER DATABASE</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const PLAYERS = [
+  {num:10, name:"Pelé", country:"Brazil", pos:"FW", era:"1958–1977",
+   clubs:[["Santos",1956,1974],["New York Cosmos",1975,1977]],
+   caps:92, goals:77, titles:3,
+   stats:{apps:"694 club apps", goals:"650 club goals", intl:"92 caps"},
+   bio:"Brazilian forward regarded as one of the sport's greatest players, known for his finishing, vision and three World Cup wins with Brazil.",
+   honours:["FIFA World Cup: 1958, 1962, 1970","Copa Libertadores: 1962, 1963","Intercontinental Cup: 1962, 1963"]},
+  {num:10, name:"Diego Maradona", country:"Argentina", pos:"FW", era:"1976–1997",
+   clubs:[["Boca Juniors",1981,1982],["Barcelona",1982,1984],["Napoli",1984,1991],["Sevilla",1992,1993]],
+   caps:91, goals:34, titles:1,
+   stats:{apps:"491 club apps", goals:"259 club goals", intl:"91 caps"},
+   bio:"Argentine playmaker famed for close control and creativity, who carried Napoli to its first Serie A titles and captained Argentina to the 1986 World Cup.",
+   honours:["FIFA World Cup: 1986","Serie A: 1986–87, 1989–90","UEFA Cup: 1988–89"]},
+  {num:14, name:"Johan Cruyff", country:"Netherlands", pos:"FW", era:"1964–1984",
+   clubs:[["Ajax",1964,1973],["Barcelona",1973,1978],["Los Angeles Aztecs",1979,1980],["Feyenoord",1983,1984]],
+   caps:48, goals:33, titles:0,
+   stats:{apps:"669 club apps", goals:"290 club goals", intl:"48 caps"},
+   bio:"Dutch forward and architect of Total Football, three-time Ballon d'Or winner who later reshaped Barcelona's playing philosophy as manager.",
+   honours:["European Cup: 1971–72, 1972–73, 1973–74","Eredivisie: 8 titles","Ballon d'Or: 1971, 1973, 1974"]},
+  {num:5, name:"Franz Beckenbauer", country:"West Germany", pos:"DF", era:"1964–1983",
+   clubs:[["Bayern Munich",1964,1977],["New York Cosmos",1977,1983]],
+   caps:103, goals:14, titles:1,
+   stats:{apps:"584 club apps", goals:"60 club goals", intl:"103 caps"},
+   bio:"West German sweeper who redefined the libero role, winning the World Cup as both captain (1974) and manager (1990).",
+   honours:["FIFA World Cup: 1974","European Cup: 1973–74, 1974–75, 1975–76","Ballon d'Or: 1972, 1976"]},
+  {num:5, name:"Zinedine Zidane", country:"France", pos:"MF", era:"1988–2006",
+   clubs:[["Cannes",1988,1992],["Bordeaux",1992,1996],["Juventus",1996,2001],["Real Madrid",2001,2006]],
+   caps:108, goals:31, titles:1,
+   stats:{apps:"506 club apps", goals:"125 club goals", intl:"108 caps"},
+   bio:"French midfielder celebrated for his balance and technique, decisive in France's 1998 World Cup and 2000 European Championship wins.",
+   honours:["FIFA World Cup: 1998","UEFA Champions League: 2001–02","Ballon d'Or: 1998"]},
+  {num:9, name:"Ronaldo Nazário", country:"Brazil", pos:"FW", era:"1993–2011",
+   clubs:[["Cruzeiro",1993,1994],["PSV",1994,1996],["Barcelona",1996,1997],["Inter Milan",1997,2002],["Real Madrid",2002,2007],["AC Milan",2007,2008]],
+   caps:98, goals:62, titles:2,
+   stats:{apps:"518 club apps", goals:"352 club goals", intl:"98 caps"},
+   bio:"Brazilian striker whose pace and finishing made him the leading scorer of the 2002 World Cup, which Brazil won under his lead.",
+   honours:["FIFA World Cup: 1994, 2002","Ballon d'Or: 1997, 2002","FIFA World Player of the Year: 1996, 1997, 2002"]},
+  {num:10, name:"Lionel Messi", country:"Argentina", pos:"FW", era:"2004–present",
+   clubs:[["Barcelona",2004,2021],["Paris Saint-Germain",2021,2023],["Inter Miami",2023,2026]],
+   caps:191, goals:112, titles:1,
+   stats:{apps:"890+ club apps", goals:"850+ club goals", intl:"191 caps"},
+   bio:"Argentine forward and record eight-time Ballon d'Or winner, known for his dribbling and finishing, who captained Argentina to the 2022 World Cup.",
+   honours:["FIFA World Cup: 2022","UEFA Champions League: 2005–06, 2008–09, 2010–11, 2014–15","Ballon d'Or: 8 times"]},
+  {num:7, name:"Cristiano Ronaldo", country:"Portugal", pos:"FW", era:"2002–present",
+   clubs:[["Sporting CP",2002,2003],["Manchester United",2003,2009],["Real Madrid",2009,2018],["Juventus",2018,2021],["Al Nassr",2023,2026]],
+   caps:216, goals:136, titles:1,
+   stats:{apps:"850+ club apps", goals:"700+ club goals", intl:"216 caps"},
+   bio:"Portuguese forward known for athleticism and goal output across four leagues, and the men's international all-time leading scorer.",
+   honours:["UEFA Champions League: 2007–08, 2013–14, 2015–16, 2016–17","UEFA European Championship: 2016","Ballon d'Or: 5 times"]},
+  {num:3, name:"Paolo Maldini", country:"Italy", pos:"DF", era:"1984–2009",
+   clubs:[["AC Milan",1984,2009]],
+   caps:126, goals:7, titles:0,
+   stats:{apps:"902 club apps", goals:"33 club goals", intl:"126 caps"},
+   bio:"Italian defender who spent his entire 25-season career at Milan, widely regarded as among the finest defenders in the sport's history.",
+   honours:["European Cup / UEFA Champions League: 1988–89, 1989–90, 1993–94, 2002–03, 2006–07","Serie A: 7 titles"]},
+  {num:7, name:"George Best", country:"Northern Ireland", pos:"FW", era:"1963–1984",
+   clubs:[["Manchester United",1963,1974],["Fulham",1976,1977],["Los Angeles Aztecs",1976,1978]],
+   caps:37, goals:9, titles:0,
+   stats:{apps:"470+ club apps", goals:"179 club goals", intl:"37 caps"},
+   bio:"Northern Irish winger known for dribbling flair, a key part of Manchester United's 1968 European Cup-winning side.",
+   honours:["European Cup: 1967–68","First Division: 1964–65, 1966–67","Ballon d'Or: 1968"]}
+];
+
+const grid = document.getElementById('grid');
+const resultCount = document.getElementById('resultCount');
+let activePos = 'ALL';
+let activeEra = 'ALL';
+let query = '';
+
+const ERA_BUCKETS = [
+  {label:'Pre-1970', test:p=>parseInt(p.era)<1970},
+  {label:'1970–1990', test:p=>parseInt(p.era)>=1970 && parseInt(p.era)<1990},
+  {label:'1990–2010', test:p=>parseInt(p.era)>=1990 && parseInt(p.era)<2010},
+  {label:'2010–present', test:p=>parseInt(p.era)>=2010}
+];
+
+function buildFilters(){
+  const posEl = document.getElementById('posFilters');
+  const positions = ['ALL','FW','MF','DF'];
+  posEl.innerHTML = positions.map(p=>`<button class="chip ${p===activePos?'active':''}" data-pos="${p}">${p==='ALL'?'All positions':p}</button>`).join('');
+  posEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{activePos=c.dataset.pos; buildFilters(); render();}));
+
+  const eraEl = document.getElementById('eraFilters');
+  eraEl.innerHTML = `<button class="chip ${activeEra==='ALL'?'active':''}" data-era="ALL">All eras</button>` +
+    ERA_BUCKETS.map(b=>`<button class="chip ${activeEra===b.label?'active':''}" data-era="${b.label}">${b.label}</button>`).join('');
+  eraEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{activeEra=c.dataset.era; buildFilters(); render();}));
+}
+
+function matches(p){
+  if(activePos!=='ALL' && p.pos!==activePos) return false;
+  if(activeEra!=='ALL'){
+    const bucket = ERA_BUCKETS.find(b=>b.label===activeEra);
+    if(bucket && !bucket.test(p)) return false;
+  }
+  if(query){
+    const q = query.toLowerCase();
+    const hay = (p.name + ' ' + p.clubs.map(c=>c[0]).join(' ') + ' ' + p.country).toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function render(){
+  const list = PLAYERS.filter(matches);
+  resultCount.textContent = list.length + (list.length===1 ? ' legend found' : ' legends found');
+  grid.innerHTML = '';
+  if(list.length===0){
+    grid.innerHTML = '<div class="empty">No legends match those filters. Try broadening your search.</div>';
+    return;
+  }
+  list.forEach((p, i)=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (i*0.04)+'s';
+    card.innerHTML = `
+      <div class="card-num">${p.num}</div>
+      <div class="card-body">
+        <span class="pos-badge">${p.pos} · ${p.country}</span>
+        <h3 class="card-name">${p.name}</h3>
+        <p class="card-country">${p.era}</p>
+        <div class="card-stats">
+          <div><span class="stat-mini">${p.goals}</span><span class="stat-mini-label">Intl goals</span></div>
+          <div><span class="stat-mini">${p.caps}</span><span class="stat-mini-label">Caps</span></div>
+          <div><span class="stat-mini">${p.titles}</span><span class="stat-mini-label">World Cups</span></div>
+        </div>
+      </div>`;
+    card.addEventListener('click', ()=>openModal(p));
+    grid.appendChild(card);
+  });
+}
+
+function openModal(p){
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('overlay');
+  const firstYear = p.clubs[0][1];
+  const lastYear = p.clubs[p.clubs.length-1][2];
+  const span = Math.max(lastYear-firstYear,1);
+
+  modal.innerHTML = `
+    <button class="modal-close" id="closeBtn">✕</button>
+    <div class="modal-head">
+      <div class="modal-num">${p.num}</div>
+      <div class="modal-head-body">
+        <span class="pos-badge">${p.pos} · ${p.country}</span>
+        <h2 class="modal-name">${p.name}</h2>
+        <p class="modal-meta">${p.era}</p>
+      </div>
+    </div>
+    <div class="modal-content">
+      <p class="section-label">Profile</p>
+      <p class="bio">${p.bio}</p>
+
+      <p class="section-label">Career stats</p>
+      <div class="stat-grid">
+        <div class="stat-box"><span class="stat-box-num">${p.stats.apps.split(' ')[0]}</span><span class="stat-box-label">Club apps</span></div>
+        <div class="stat-box"><span class="stat-box-num">${p.stats.goals.split(' ')[0]}</span><span class="stat-box-label">Club goals</span></div>
+        <div class="stat-box"><span class="stat-box-num">${p.stats.intl.split(' ')[0]}</span><span class="stat-box-label">Caps</span></div>
+      </div>
+
+      <p class="section-label">Club timeline</p>
+      <div class="timeline" id="tl">
+        ${p.clubs.map(c=>{
+          const w = Math.round(((c[2]-c[1])/span)*100);
+          return `<div class="tl-row">
+            <div class="tl-club">${c[0]}</div>
+            <div class="tl-bar-track"><div class="tl-bar-fill" data-w="${Math.max(w,8)}"></div></div>
+            <div class="tl-years">${c[1]}–${c[2]}</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <p class="section-label">Honours</p>
+      <ul class="honours">${p.honours.map(h=>`<li>${h}</li>`).join('')}</ul>
+    </div>
+  `;
+
+  overlay.classList.add('open');
+  document.getElementById('closeBtn').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+
+  requestAnimationFrame(()=>{
+    modal.querySelectorAll('.tl-bar-fill').forEach(el=>{
+      setTimeout(()=>{ el.style.width = el.dataset.w + '%'; }, 80);
+    });
+  });
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+}
+
+document.getElementById('searchInput').addEventListener('input', (e)=>{
+  query = e.target.value;
+  render();
+});
+
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+
+function animateCount(el, target, duration){
+  const start = performance.now();
+  function tick(now){
+    const p = Math.min((now-start)/duration, 1);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(eased*target);
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+buildFilters();
+render();
+animateCount(document.getElementById('statPlayers'), PLAYERS.length, 900);
+animateCount(document.getElementById('statTitles'), PLAYERS.reduce((s,p)=>s+p.titles,0), 900);
+animateCount(document.getElementById('statEras'), 6, 900);
+</script>
+</body>
+</html>
